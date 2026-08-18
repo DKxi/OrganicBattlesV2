@@ -1,6 +1,12 @@
 ﻿const $ = (selector) => document.querySelector(selector);
+import { Avatar, createAvatarStage, setAvatarState, DEFAULT_AVATAR_CONFIG, PLAYER_AVATAR_OPTIONS, normalizeAvatarConfig } from './avatars.js';
+
 let session = null;
 let game = null;
+let avatarStage = null;
+let playerAvatar = null;
+let bossAvatar = null;
+let avatarConfig = normalizeAvatarConfig();
 
 const api = async (path, body = {}) => {
   const payload = { ...body };
@@ -43,30 +49,86 @@ const avatarPalette = {
 };
 
 function updateAvatarPreview() {
-  const figure = $('.avatar-preview .avatar-orb');
-  if (!figure) return;
+  const preview = $('.avatar-preview');
+  if (!preview) return;
 
-  const values = Object.fromEntries(
-    ['body', 'skin', 'hair', 'outfit', 'accessory'].map((id) => [id, $('#' + id)?.value || ''])
-  );
-
-  figure.className = 'avatar-figure large';
-  figure.dataset.body = values.body;
-  figure.dataset.outfit = values.outfit;
-  figure.innerHTML = '<div class="avatar-aura"></div><div class="avatar-body"></div><div class="avatar-head"><div class="avatar-hair"></div></div><div class="avatar-accessory"></div>';
-
-  Object.entries(values).forEach(([part, value]) => {
-    figure.style.setProperty(`--avatar-${part}`, avatarPalette[part]?.[value] || '#ffffff');
-  });
+  let figure = preview.querySelector('.avatar-preview-art');
+  if (!figure) {
+    preview.querySelector('.avatar-orb')?.remove();
+    figure = Avatar({ character: 'organic-apprentice', state: 'idle', size: 'preview', config: avatarConfig });
+    figure.classList.add('avatar-preview-art');
+    preview.prepend(figure);
+  } else {
+    const replacement = Avatar({ character: 'organic-apprentice', state: 'idle', size: 'preview', config: avatarConfig });
+    replacement.classList.add('avatar-preview-art');
+    figure.replaceWith(replacement);
+    figure = replacement;
+  }
 
   let label = $('#avatar-preview-label');
   if (!label) {
     label = document.createElement('span');
     label.id = 'avatar-preview-label';
-    figure.parentElement.append(label);
+    preview.append(label);
   }
 
-  label.textContent = `${values.body.toUpperCase()} // ${values.outfit.toUpperCase()} // ${values.accessory.toUpperCase()}`;
+  label.textContent = `${avatarConfig.hair.style.toUpperCase()} // ${avatarConfig.coat.toUpperCase()} // ${avatarConfig.flask.toUpperCase()}`;
+}
+
+const optionLabels = {
+  skinTones: 'Skin tone', hairStyles: 'Hair style', hairColors: 'Hair color', glasses: 'Glasses',
+  coats: 'Lab coat', shirts: 'Shirt / vest', pants: 'Pants', shoes: 'Shoes', satchels: 'Satchel',
+  flasks: 'Flask', accessories: 'Accessory', accents: 'Accent color',
+};
+
+const optionKeys = {
+  skinTones: 'skinTone', hairStyles: 'hair.style', hairColors: 'hair.color', glasses: 'glasses',
+  coats: 'coat', shirts: 'shirt', pants: 'pants', shoes: 'shoes', satchels: 'satchel',
+  flasks: 'flask', accessories: 'accessory', accents: 'accentColor',
+};
+
+function readConfigValue(key) {
+  return key.split('.').reduce((value, part) => value?.[part], avatarConfig);
+}
+
+function setConfigValue(key, value) {
+  const parts = key.split('.');
+  if (parts.length === 1) avatarConfig = normalizeAvatarConfig({ ...avatarConfig, [key]: value });
+  else avatarConfig = normalizeAvatarConfig({ ...avatarConfig, [parts[0]]: { ...avatarConfig[parts[0]], [parts[1]]: value } });
+}
+
+function ensureAvatarCreatorUi() {
+  const form = $('.avatar-form');
+  if (!form || form.dataset.v3Ready) return;
+  form.dataset.v3Ready = 'true';
+  form.innerHTML = Object.entries(PLAYER_AVATAR_OPTIONS).map(([category, values]) => `<label>${optionLabels[category].toUpperCase()} <select data-avatar-option="${category}">${values.map((value) => `<option value="${value}">${value.replaceAll('-', ' ')}</option>`).join('')}</select></label>`).join('');
+  form.querySelectorAll('[data-avatar-option]').forEach((select) => {
+    const category = select.dataset.avatarOption;
+    select.value = readConfigValue(optionKeys[category]);
+    select.addEventListener('change', () => { setConfigValue(optionKeys[category], select.value); updateAvatarPreview(); });
+  });
+
+  const actions = document.createElement('div');
+  actions.className = 'avatar-creator-actions';
+  actions.innerHTML = '<button type="button" id="randomize-avatar" class="secondary">RANDOMIZE</button><button type="button" id="reset-avatar" class="secondary">RESET</button>';
+  form.parentElement.insertBefore(actions, form.nextSibling);
+  $('#randomize-avatar').onclick = () => {
+    const random = (values) => values[Math.floor(Math.random() * values.length)];
+    avatarConfig = normalizeAvatarConfig({
+      ...avatarConfig, skinTone: random(PLAYER_AVATAR_OPTIONS.skinTones), glasses: random(PLAYER_AVATAR_OPTIONS.glasses),
+      coat: random(PLAYER_AVATAR_OPTIONS.coats), shirt: random(PLAYER_AVATAR_OPTIONS.shirts), pants: random(PLAYER_AVATAR_OPTIONS.pants),
+      shoes: random(PLAYER_AVATAR_OPTIONS.shoes), satchel: random(PLAYER_AVATAR_OPTIONS.satchels), flask: random(PLAYER_AVATAR_OPTIONS.flasks),
+      accessory: random(PLAYER_AVATAR_OPTIONS.accessories), accentColor: random(PLAYER_AVATAR_OPTIONS.accents),
+      hair: { style: random(PLAYER_AVATAR_OPTIONS.hairStyles), color: random(PLAYER_AVATAR_OPTIONS.hairColors) },
+    });
+    form.querySelectorAll('[data-avatar-option]').forEach((select) => { select.value = readConfigValue(optionKeys[select.dataset.avatarOption]); });
+    updateAvatarPreview();
+  };
+  $('#reset-avatar').onclick = () => {
+    avatarConfig = normalizeAvatarConfig(DEFAULT_AVATAR_CONFIG);
+    form.querySelectorAll('[data-avatar-option]').forEach((select) => { select.value = readConfigValue(optionKeys[select.dataset.avatarOption]); });
+    updateAvatarPreview();
+  };
 }
 
 function ensureExplanationUi() {
@@ -127,6 +189,26 @@ function showExplanation(result) {
   $('#explanation-modal').classList.remove('hidden');
 }
 
+function showBattleModal({ title, copy, action = 'CONTINUE', onDone }) {
+  let modal = $('#battle-outcome-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'battle-outcome-modal';
+    modal.className = 'hidden';
+    modal.innerHTML = `<div class="modal-card outcome-card"><div class="eyebrow">ORGO // BATTLE REPORT</div><h2 id="outcome-title"></h2><p id="outcome-copy" class="modal-question"></p><button id="outcome-action" class="primary"></button></div>`;
+    $('#app').append(modal);
+  }
+  $('#outcome-title').textContent = title;
+  $('#outcome-copy').textContent = copy;
+  const button = $('#outcome-action');
+  button.textContent = action;
+  button.onclick = () => {
+    modal.classList.add('hidden');
+    if (onDone) onDone();
+  };
+  modal.classList.remove('hidden');
+}
+
 function render(s) {
   session = s;
   const chapterLabel = $('#chapter-label');
@@ -138,11 +220,46 @@ function render(s) {
   }
 
   const log = $('#log');
-  if (log) log.innerHTML = s.log.map((message) => `<div class="log-line">${message}</div>`).join('');
+  if (log) {
+    log.innerHTML = s.log.map((message) => `<div class="log-line">${message}</div>`).join('');
+    requestAnimationFrame(() => { log.scrollTop = log.scrollHeight; });
+  }
 
   renderSpells(s);
   renderQuestion(s);
   drawScene(s);
+  renderAvatars(s);
+}
+
+function renderAvatars(s) {
+  if (!avatarStage) return;
+  if (!playerAvatar) {
+    playerAvatar = Avatar({ character: 'organic-apprentice', state: 'idle', size: 'player', direction: 'right', config: s.avatar?.config || s.avatar });
+    bossAvatar = Avatar({ character: 'carbonyl-dragon', state: 'idle', size: 'boss', direction: 'left' });
+    avatarStage.append(playerAvatar, bossAvatar);
+  }
+  playerAvatar.querySelector('.avatar-label')?.remove();
+  bossAvatar.querySelector('.avatar-label')?.remove();
+  const playerLabel = document.createElement('div');
+  playerLabel.className = 'avatar-label player-label';
+  playerLabel.textContent = `YOU // ${s.player.hp} HP`;
+  const bossLabel = document.createElement('div');
+  bossLabel.className = 'avatar-label boss-label';
+  bossLabel.textContent = `${s.boss.name} // ${s.boss.hp} HP`;
+  playerAvatar.append(playerLabel);
+  bossAvatar.append(bossLabel);
+}
+
+function animateBattleResult(result) {
+  if (!playerAvatar || !bossAvatar) return;
+  setAvatarState(playerAvatar, result.correct ? 'cast' : 'miss');
+  if (result.boss_hit) setTimeout(() => setAvatarState(playerAvatar, 'hit'), 430);
+  if (result.correct) setTimeout(() => setAvatarState(bossAvatar, result.defeated ? 'defeated' : 'hit'), 420);
+  if (result.defeated) setTimeout(() => setAvatarState(playerAvatar, 'victory'), 760);
+  setTimeout(() => {
+    if (!result.defeated) setAvatarState(playerAvatar, 'idle');
+    if (!result.defeated) setAvatarState(bossAvatar, 'idle');
+  }, 1500);
 }
 
 function renderSpells(s) {
@@ -186,6 +303,7 @@ function renderQuestion(s) {
 }
 
 function showOutcome(r) {
+  animateBattleResult(r);
   const msg = r.defeated
     ? `VICTORY — ${r.boss.name} defeated.`
     : r.defeat
@@ -202,31 +320,32 @@ function showOutcome(r) {
       headerButton.textContent = 'EXPLANATION';
       headerButton.classList.add('available');
     }
-    showExplanation(r);
-    setTimeout(() => alert(msg + ' Review the explanation and try again.'), 200);
+    showBattleModal({
+      title: 'SPELL FIZZLE',
+      copy: `The spell fizzled. Correct answer: ${r.correct_answer}`,
+      action: 'VIEW EXPLANATION',
+      onDone: () => showExplanation(r),
+    });
     return;
   }
 
-  setTimeout(() => {
-    if (r.defeat) {
-      if (confirm(msg + ' Retry?')) {
-        api('/api/battle/retry', { session_id: session.session_id }).then(render);
-      }
-    } else if (r.defeated) {
-      if (confirm(msg + ' Continue to next node?')) {
-        api('/api/battle/next-turn', { session_id: session.session_id }).then((nextState) => {
-          if (nextState.victory) alert('SPECTRAL CHAMPION — all chapters complete!');
-          render(nextState);
-        });
-      }
-    } else {
-      alert(msg);
-    }
-  }, 200);
+  if (r.defeat) {
+    showBattleModal({ title: 'DEFEAT', copy: 'Your aura fades. Regroup and try the battle again.', action: 'RETRY', onDone: () => api('/api/battle/retry', { session_id: session.session_id }).then(render) });
+  } else if (r.defeated) {
+    showBattleModal({ title: 'VICTORY', copy: `${r.boss.name} defeated.`, action: 'CONTINUE', onDone: () => api('/api/battle/next-turn', { session_id: session.session_id }).then((nextState) => {
+      if (nextState.victory) showBattleModal({ title: 'SPECTRAL CHAMPION', copy: 'All chapters complete.', action: 'CLOSE' });
+      else render(nextState);
+    }) });
+  } else {
+    showBattleModal({ title: r.correct ? 'DIRECT HIT' : 'BATTLE UPDATE', copy: msg, action: 'BACK TO BATTLE' });
+  }
 }
 
 function startPhaser() {
   if (game) return;
+
+  avatarStage = createAvatarStage();
+  $('#phaser')?.append(avatarStage);
 
   game = new Phaser.Game({
     type: Phaser.AUTO,
@@ -265,34 +384,8 @@ function drawScene(s) {
   scene.children.list.filter((x) => x.getData?.('dynamic')).forEach((x) => x.destroy());
 
   const chapterColor = Phaser.Display.Color.HexStringToColor(s.chapter_color).color;
-  const boss = scene.add.container(width * 0.72, height * 0.42).setData('dynamic', true);
-  const glow = scene.add.circle(0, 0, Math.min(105, width * 0.16), chapterColor, 0.12).setStrokeStyle(3, chapterColor, 0.8);
-  boss.add([
-    glow,
-    scene.add.ellipse(0, 20, 150, 190, 0x182a42).setStrokeStyle(4, chapterColor),
-    scene.add.circle(0, -18, 28, 0x07111c).setStrokeStyle(4, 0xff9f5a),
-    scene.add.text(0, 130, s.boss.name, { fontFamily: 'Space Grotesk', fontSize: '20px', color: '#eaf7f5' }).setOrigin(0.5),
-    scene.add.text(0, 158, `BOSS HP ${s.boss.hp} / ${s.boss.max_hp}`, { fontFamily: 'DM Mono', fontSize: '12px', color: '#ff9f5a' }).setOrigin(0.5),
-  ]);
-  scene.tweens.add({ targets: glow, scale: 1.15, alpha: 0.3, duration: 1200, yoyo: true, repeat: -1 });
-
-  const avatar = s.avatar || {};
-  const avatarColor = (part, fallback) => Phaser.Display.Color.HexStringToColor(avatarPalette[part]?.[avatar[part]] || fallback).color;
-
-  const player = scene.add.container(width * 0.23, height * 0.62).setData('dynamic', true);
-  const aura = scene.add.circle(0, 0, 64, avatarColor('accessory', '#36e5d0'), 0.12);
-  const body = scene.add.ellipse(0, 25, 80, 120, avatarColor('outfit', '#29556b'));
-  const head = scene.add.circle(0, -45, 34, avatarColor('skin', '#ffd4b2'));
-  const hair = scene.add.arc(0, -55, 30, 200, 340, false, avatarColor('hair', '#6c3d79'));
-  const accessory = scene.add.rectangle(0, -45, 52, 6, avatarColor('accessory', '#36e5d0'), 0.85);
-  player.add([
-    aura,
-    body,
-    head,
-    hair,
-    accessory,
-    scene.add.text(0, 110, `YOU ${s.player.hp} HP`, { fontFamily: 'DM Mono', fontSize: '12px', color: '#36e5d0' }).setOrigin(0.5),
-  ]);
+  scene.add.text(width * 0.5, height * 0.12, `${s.chapter_name.toUpperCase()} // ${s.boss.lore}`, { fontFamily: 'DM Mono', fontSize: '12px', color: '#b8cecc' }).setOrigin(0.5).setData('dynamic', true);
+  scene.add.circle(width * 0.72, height * 0.48, Math.min(125, width * 0.18), chapterColor, 0.08).setStrokeStyle(2, chapterColor, 0.45).setData('dynamic', true);
 }
 
 function bindDomEvents() {
@@ -305,8 +398,10 @@ function bindDomEvents() {
   if (startButton) {
     startButton.addEventListener('click', async () => {
       session = await api('/api/game/new', {});
+      avatarConfig = normalizeAvatarConfig(DEFAULT_AVATAR_CONFIG);
       $('#boot')?.classList.add('hidden');
       $('#avatar-creator')?.classList.remove('hidden');
+      ensureAvatarCreatorUi();
       updateAvatarPreview();
     });
   }
@@ -314,8 +409,7 @@ function bindDomEvents() {
   const acceptButton = $('#accept-avatar');
   if (acceptButton) {
     acceptButton.addEventListener('click', async () => {
-      const avatar = Object.fromEntries(['body', 'skin', 'hair', 'outfit', 'accessory'].map((id) => [id, $('#' + id).value]));
-      avatar.aura = 'teal';
+      const avatar = { body: 'arc', skin: avatarConfig.skinTone, hair: avatarConfig.hair.color, outfit: avatarConfig.coat, accessory: avatarConfig.accessory, aura: avatarConfig.accentColor, config: avatarConfig };
       session = await api('/api/avatar/finalize', { session_id: session.session_id, ...avatar });
       $('#avatar-creator')?.classList.add('hidden');
       $('#game-shell')?.classList.remove('hidden');

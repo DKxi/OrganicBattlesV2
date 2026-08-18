@@ -19,6 +19,14 @@ def test_avatar_is_permanent():
     assert client.post('/api/avatar/finalize', params={'session_id':sid}, json=avatar()).status_code == 200
     assert client.post('/api/avatar/finalize', params={'session_id':sid}, json=avatar()).status_code == 409
 
+def test_avatar_v3_configuration_persists():
+    s = start(); sid = s['session_id']
+    config = {'baseCharacter': 'organic-apprentice', 'skinTone': 'medium-deep', 'hair': {'style': 'spiky', 'color': 'dark-purple'}, 'glasses': 'thin-silver', 'coat': 'blue-trim', 'flask': 'blue-catalyst'}
+    payload = {**avatar(), 'config': config}
+    response = client.post('/api/avatar/finalize', params={'session_id': sid}, json=payload)
+    assert response.status_code == 200
+    assert response.json()['avatar']['config'] == config
+
 def test_correct_answer_deals_damage():
     s = start(); sid = s['session_id']
     client.post('/api/avatar/finalize', params={'session_id':sid}, json=avatar())

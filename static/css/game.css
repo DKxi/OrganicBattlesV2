@@ -38,4 +38,87 @@
 #explanation-copy{color:#b8cecc;line-height:1.6}
 .modal-close{position:absolute;right:16px;top:12px;border:0;background:none;color:var(--muted);font-size:1.8rem;line-height:1}
 .modal-close:hover{color:var(--ink)}
+.outcome-card{border-color:#2b6870;box-shadow:0 20px 80px rgba(0,0,0,.62)}
+.outcome-card h2{color:var(--cyan)}
+.outcome-card .primary{margin-top:10px}
 @media(max-width:800px){.brand-group{display:flex;align-items:center;gap:8px}.header-help{padding:7px 9px;font-size:.55rem}.modal-card{padding:24px 20px}}
+
+/* Inline SVG avatar system: artwork stays in SVG, while CSS owns motion and effects. */
+#phaser{position:relative}
+.avatar-stage{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.avatar{position:absolute;bottom:3%;width:clamp(170px,24vw,290px);height:auto;transform-origin:50% 100%;filter:drop-shadow(0 18px 16px rgba(0,0,0,.35));}
+.avatar-player{left:7%;width:clamp(155px,23vw,270px)}
+.avatar-boss{right:4%;width:clamp(210px,34vw,390px)}
+.avatar.face-left .avatar-svg{transform:scaleX(-1)}
+.avatar-svg{display:block;width:100%;height:auto;overflow:visible}
+.avatar-label{position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);white-space:nowrap;padding:5px 9px;border:1px solid #2b6870;border-radius:999px;background:rgba(5,15,24,.82);font:500 .62rem 'DM Mono',monospace;letter-spacing:.06em;color:var(--cyan)}
+.avatar-preview-art{position:relative!important;inset:auto!important;width:150px!important;height:196px;flex:none;filter:drop-shadow(0 10px 12px rgba(0,0,0,.35))}
+.avatar-preview-art .avatar-svg{height:100%}
+.boss-label{color:var(--orange);border-color:#805033}
+.avatar.state-idle .torso,.avatar.state-idle .body{animation:avatar-breathe 3.2s ease-in-out infinite}
+.avatar.state-idle .flask-bubbles{animation:bubble-rise 2.2s ease-in-out infinite}
+.avatar.state-idle .magic-glow,.avatar.state-idle .reaction-flame{animation:avatar-glow 2.6s ease-in-out infinite}
+.avatar.state-idle .molecule-ring{animation:molecule-orbit 12s linear infinite;transform-box:fill-box;transform-origin:center}
+.avatar.state-idle .left-wing,.avatar.state-idle .right-wing{animation:dragon-wing-idle 4s ease-in-out infinite;transform-box:fill-box;transform-origin:bottom center}
+.avatar.state-idle .tail{animation:dragon-tail 4.8s ease-in-out infinite;transform-box:fill-box;transform-origin:left center}
+.avatar.state-cast{animation:avatar-cast .7s ease-out}
+.avatar.state-cast .right-arm{animation:cast-arm .62s ease-out;transform-box:fill-box;transform-origin:top center}
+.avatar.state-cast .flask,.avatar.state-cast .reaction-flame{animation:cast-glow .7s ease-out}
+.avatar.state-hit{animation:avatar-hit .34s ease-in-out}
+.avatar.state-miss{animation:avatar-miss .42s ease-in-out}
+.avatar.state-defeated{animation:avatar-defeat .9s ease-in forwards}
+.avatar.state-victory{animation:avatar-victory .8s ease-out}
+.avatar.state-defeated .fire,.avatar.state-defeated .mouth-glow{opacity:.15;transition:opacity .4s}
+@keyframes avatar-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes bubble-rise{0%,100%{transform:translateY(5px);opacity:.45}50%{transform:translateY(-8px);opacity:1}}
+@keyframes avatar-glow{0%,100%{opacity:.65}50%{opacity:1;filter:drop-shadow(0 0 8px currentColor)}}
+@keyframes molecule-orbit{to{transform:rotate(360deg)}}
+@keyframes dragon-wing-idle{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg) translateY(-3px)}}
+@keyframes dragon-tail{0%,100%{transform:rotate(0)}50%{transform:rotate(-3deg)}}
+@keyframes avatar-cast{0%{transform:translateX(0)}45%{transform:translateX(18px) scale(1.03)}100%{transform:translateX(0)}}
+@keyframes cast-arm{50%{transform:rotate(-22deg)}}
+@keyframes cast-glow{50%{filter:drop-shadow(0 0 18px #8ffff0);opacity:1}}
+@keyframes avatar-hit{0%,100%{transform:translateX(0)}25%{transform:translateX(-9px)}50%{transform:translateX(8px)}75%{transform:translateX(-3px)}}
+@keyframes avatar-miss{50%{transform:rotate(-5deg) translateX(-6px);opacity:.65}}
+@keyframes avatar-defeat{to{transform:translateY(24px) rotate(-5deg);opacity:.38;filter:grayscale(.7)}}
+@keyframes avatar-victory{50%{transform:translateY(-14px) rotate(-2deg)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}.avatar.state-defeated{opacity:.5}}
+@media(max-width:600px){.avatar-player{left:1%;width:clamp(125px,35vw,200px)}.avatar-boss{right:-4%;width:clamp(165px,43vw,270px)}.avatar-label{font-size:.52rem}.avatar-stage{bottom:2%}}
+
+/* Keep the field log inside its panel and make the newest battle message visible. */
+#game-view{min-height:0}
+#side-panel{min-height:0;overflow:hidden}
+#log{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;padding-right:5px;scroll-behavior:smooth}
+.log-line{overflow-wrap:anywhere;word-break:break-word}
+
+/* Avatar System V3 configuration layers. Primary anatomy remains illustrated SVG paths;
+   these selectors recolor only the intended material or swap an illustrated layer. */
+.organic-apprentice .head>path:first-child{fill:#d99b78}
+.organic-apprentice.skin-light .head>path:first-child{fill:#f7c7a2}.organic-apprentice.skin-light-medium .head>path:first-child{fill:#eab18c}.organic-apprentice.skin-medium .head>path:first-child{fill:#d99b78}.organic-apprentice.skin-medium-deep .head>path:first-child{fill:#ae725b}.organic-apprentice.skin-deep .head>path:first-child{fill:#7d4b42}
+.organic-apprentice .head>path:nth-child(2),.organic-apprentice .hair-variant{fill:#193d2d}.organic-apprentice.hair-color-black .head>path:nth-child(2),.organic-apprentice.hair-color-black .hair-variant{fill:#141b20}.organic-apprentice.hair-color-brown .head>path:nth-child(2),.organic-apprentice.hair-color-brown .hair-variant{fill:#69402f}.organic-apprentice.hair-color-dark-purple .head>path:nth-child(2),.organic-apprentice.hair-color-dark-purple .hair-variant{fill:#38234e}.organic-apprentice.hair-color-blue-black .head>path:nth-child(2),.organic-apprentice.hair-color-blue-black .hair-variant{fill:#172e43}
+.organic-apprentice .hair-variant{display:none}.organic-apprentice.hair-style-side-swept .head>path:nth-child(2),.organic-apprentice.hair-style-spiky .head>path:nth-child(2),.organic-apprentice.hair-style-curly .head>path:nth-child(2),.organic-apprentice.hair-style-medium-layered .head>path:nth-child(2){display:none}.organic-apprentice.hair-style-side-swept .hair-side-swept,.organic-apprentice.hair-style-spiky .hair-spiky,.organic-apprentice.hair-style-curly .hair-curly,.organic-apprentice.hair-style-medium-layered .hair-medium-layered{display:block}
+.organic-apprentice.glasses-none .glasses{display:none}.organic-apprentice.glasses-round-black .glasses,.organic-apprentice.glasses-round-green .glasses{display:block}.organic-apprentice.glasses-round-black .glasses{stroke:#101923}.organic-apprentice.glasses-rectangular-black .glasses{stroke:#101923;transform:scaleX(1.12);transform-origin:center}.organic-apprentice.glasses-thin-silver .glasses{stroke:#d4e0e2;stroke-width:3}
+.organic-apprentice.coat-green-trim .torso>path:first-child{stroke:#2fae76}.organic-apprentice.coat-blue-trim .torso>path:first-child{stroke:#438fd5}.organic-apprentice.coat-advanced-chemist .torso>path:first-child{fill:#d9e5e7;stroke:#8864ce}.organic-apprentice.coat-reaction-coat .torso>path:first-child{fill:#e8dff7;stroke:#a66cff}
+.organic-apprentise .torso>path:nth-child(2){fill:#1d7065}.organic-apprentice.shirt-forest-green .torso>path:nth-child(2){fill:#1d7065}.organic-apprentice.shirt-navy .torso>path:nth-child(2){fill:#1f416c}.organic-apprentice.shirt-black .torso>path:nth-child(2){fill:#19212a}.organic-apprentice.shirt-purple .torso>path:nth-child(2){fill:#553b7f}.organic-apprentice.shirt-white .torso>path:nth-child(2){fill:#eff8f4}
+.organic-apprentice.pants-dark-green .legs>path:nth-child(-n+2){fill:#173d42}.organic-apprentice.pants-charcoal .legs>path:nth-child(-n+2){fill:#303844}.organic-apprentice.pants-navy .legs>path:nth-child(-n+2){fill:#1d3157}.organic-apprentice.pants-black .legs>path:nth-child(-n+2){fill:#151b24}
+.organic-apprentice.shoes-black-sneakers .legs>path:nth-child(n+3){fill:#202631}.organic-apprentice.shoes-chemist-boots .legs>path:nth-child(n+3){fill:#6f4938}.organic-apprentice.shoes-reaction-boots .legs>path:nth-child(n+3){fill:#4c3d91}
+.organic-apprentice.satchel-dark-lab-bag .satchel>path:first-child{fill:#293442}.organic-apprentice.satchel-reaction-pouch .satchel>path:first-child{fill:#553875}.organic-apprentice.satchel-advanced-alchemist-pack .satchel>path:first-child{fill:#244c59}
+.organic-apprentice.flask-blue-catalyst .flask-liquid{fill:#43a9ff}.organic-apprentice.flask-purple-reagent .flask-liquid{fill:#a95bff}.organic-apprentice.flask-orange-energy .flask-liquid{fill:#ff873d}
+.organic-apprentice.accent-azure .magic-glow{color:#54bfff}.organic-apprentice.accent-violet .magic-glow{color:#b66cff}.organic-apprentice.accent-amber .magic-glow{color:#ffc15c}.organic-apprentice.accent-crimson .magic-glow{color:#ff6c71}
+.organic-apprentice .accessory-layer>path{display:none}.organic-apprentice.accessory-benzene-pin .accessory-benzene-pin,.organic-apprentice.accessory-periodic-table-badge .accessory-periodic-table-badge,.organic-apprentice.accessory-molecule-brooch .accessory-molecule-brooch,.organic-apprentice.accessory-reaction-arrow-pin .accessory-reaction-arrow-pin,.organic-apprentice.accessory-chemist-gloves .accessory-chemist-gloves,.organic-apprentice.accessory-wrist-device .accessory-wrist-device{display:block}
+.avatar-art-frame{position:relative;width:100%;line-height:0;z-index:1}.avatar-art{display:block;width:100%;height:auto;max-height:100%;object-fit:contain;user-select:none;filter:drop-shadow(0 16px 13px rgba(0,0,0,.42)) var(--tone-filter) var(--hair-filter) var(--gear-filter)}.avatar-fallback{display:none}.avatar-asset-fallback .avatar-fallback{display:block;position:absolute;inset:auto 0 8%;text-align:center;color:var(--cyan);font:500 .62rem 'DM Mono',monospace}.avatar-effects{position:absolute;inset:0;z-index:2;pointer-events:none;color:var(--accent-color,#36e5d0)}.effect-aura{position:absolute;left:18%;right:18%;bottom:5%;height:16%;border-radius:50%;background:radial-gradient(ellipse, currentColor 0, transparent 70%);opacity:.22;filter:blur(7px)}.effect-spark{position:absolute;width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 12px currentColor;opacity:.8}.spark-one{left:20%;top:22%}.spark-two{right:17%;top:34%}.effect-accessory{position:absolute;right:15%;top:43%;font:700 1.25rem/1 Georgia,serif;color:currentColor;text-shadow:0 0 10px currentColor;opacity:.88}
+.face-left .avatar-art-frame{transform:scaleX(-1)}
+.avatar.state-idle .avatar-art{animation:raster-breathe 3.2s ease-in-out infinite}.avatar.state-cast .avatar-art{animation:raster-cast .7s ease-out}.avatar.state-hit .avatar-art{animation:raster-hit .34s ease-in-out}.avatar.state-miss .avatar-art{animation:raster-miss .42s ease-in-out}.avatar.state-defeated .avatar-art{animation:raster-defeat .9s ease-in forwards}.avatar.state-victory .avatar-art{animation:raster-victory .8s ease-out}.avatar.state-cast .effect-aura{animation:raster-cast-aura .7s ease-out}.avatar.state-cast .spark-one,.avatar.state-cast .spark-two{animation:raster-spark .55s ease-out infinite alternate}.avatar.state-defeated .avatar-effects{opacity:.2;transition:opacity .4s}
+.accent-emerald{--accent-color:#42e0b2}.accent-azure{--accent-color:#55bfff}.accent-violet{--accent-color:#b86cff}.accent-amber{--accent-color:#ffc15c}.accent-crimson{--accent-color:#ff6c71}
+.hair-color-black{--hair-filter:saturate(.72) brightness(.92)}.hair-color-dark-green{--hair-filter:saturate(1.05)}.hair-color-brown{--hair-filter:sepia(.25) saturate(1.12)}.hair-color-dark-purple{--hair-filter:hue-rotate(18deg) saturate(1.25)}.hair-color-blue-black{--hair-filter:hue-rotate(155deg) saturate(.9)}
+.skin-light{--tone-filter:brightness(1.08) saturate(.92)}.skin-light-medium{--tone-filter:brightness(1.02) saturate(.96)}.skin-medium{--tone-filter:none}.skin-medium-deep{--tone-filter:brightness(.92) saturate(1.04)}.skin-deep{--tone-filter:brightness(.82) saturate(1.12)}
+.coat-classic-white{--gear-filter:none}.coat-green-trim{--gear-filter:saturate(1.08)}.coat-blue-trim{--gear-filter:hue-rotate(10deg) saturate(1.12)}.coat-advanced-chemist{--gear-filter:contrast(1.06) saturate(1.14)}.coat-reaction-coat{--gear-filter:hue-rotate(245deg) saturate(1.14)}.shirt-purple{--gear-filter:hue-rotate(250deg) saturate(1.2)}.shirt-navy{--gear-filter:hue-rotate(175deg) saturate(1.06)}.shirt-black{--gear-filter:brightness(.92) contrast(1.08)}.shirt-white{--gear-filter:brightness(1.04) saturate(.8)}.flask-blue-catalyst,.flask-purple-reagent,.flask-orange-energy{--gear-filter:saturate(1.2)}
+@keyframes raster-breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.008)}}@keyframes raster-cast{0%{transform:translateX(0)}45%{transform:translateX(14px) scale(1.025)}100%{transform:translateX(0)}}@keyframes raster-hit{0%,100%{transform:translateX(0)}25%{transform:translateX(-9px)}50%{transform:translateX(8px)}75%{transform:translateX(-3px)}}@keyframes raster-miss{50%{transform:rotate(-4deg) translateX(-6px);opacity:.68}}@keyframes raster-defeat{to{transform:translateY(22px) rotate(-5deg);opacity:.42;filter:grayscale(.72) drop-shadow(0 16px 13px rgba(0,0,0,.2))}}@keyframes raster-victory{50%{transform:translateY(-13px) rotate(-2deg)}}@keyframes raster-cast-aura{50%{transform:scale(1.35);opacity:.7}}@keyframes raster-spark{to{transform:translateY(-13px) scale(1.4);opacity:.2}}
+.avatar-stage .avatar{height:min(90%, 390px);width:auto;max-width:48%;bottom:4%;}
+.avatar-stage .avatar-player{height:min(84%, 340px);max-width:39%;left:8%;}
+.avatar-stage .avatar-boss{height:min(93%, 420px);max-width:52%;right:4%;}
+.avatar-stage .avatar-art-frame,.avatar-stage .avatar-art{height:100%;width:auto;max-width:100%;object-fit:contain;}
+.avatar-stage .avatar-label{bottom:0;}
+@media(max-width:600px){.avatar-stage .avatar-player{height:min(78%, 235px);left:1%;max-width:44%}.avatar-stage .avatar-boss{height:min(82%, 275px);right:0;max-width:54%}.avatar-stage .avatar-label{font-size:.48rem;padding:4px 6px}}
+.avatar-creator-actions{display:flex;gap:10px;margin:-12px 0 24px}.secondary{border:1px solid #416a77;border-radius:8px;background:rgba(166,124,255,.1);padding:10px 14px;color:var(--ink);font:500 .62rem 'DM Mono',monospace;letter-spacing:.1em;transition:.2s}.secondary:hover{border-color:var(--violet);background:rgba(166,124,255,.2)}
+@media(max-width:800px){#avatar-creator .avatar-form{max-height:42vh;overflow-y:auto;padding-right:4px}.avatar-creator-actions{margin-top:-4px}}
