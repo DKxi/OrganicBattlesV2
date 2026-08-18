@@ -34,3 +34,15 @@ def test_correct_answer_deals_damage():
     answer = next(v for k, v in answers.items() if q['question']['prompt'].startswith(k))
     result = client.post('/api/battle/answer', params={'session_id':sid}, json={'answer':answer}).json()
     assert result['damage'] == 20
+
+
+def test_favicon_endpoint_exists():
+    response = client.get('/favicon.ico')
+    assert response.status_code == 200
+    assert response.headers['content-type'].startswith('image/')
+
+
+def test_page_uses_versioned_static_assets():
+    html = client.get('/').text
+    assert '/static/css/game.css?v=' in html
+    assert '/static/js/main.js?v=' in html

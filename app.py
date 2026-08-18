@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).parent
+APP_VERSION = "2026-08-17-1"
 
 SPELLS = {
     "fire-spark": ("Fire Spark", "basic", 20, 1.5, "A quick flame projectile."),
@@ -124,7 +125,20 @@ def get_session(session_id: str | None) -> Session:
     return sessions[session_id]
 
 @app.get("/")
-def index(): return FileResponse(ROOT / "templates" / "index.html")
+def index():
+    response = FileResponse(ROOT / "templates" / "index.html")
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    response = FileResponse(ROOT / "static" / "favicon.svg", media_type="image/svg+xml")
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 @app.post("/api/game/new")
 def new_game():
