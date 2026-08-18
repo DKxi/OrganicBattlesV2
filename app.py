@@ -57,6 +57,15 @@ QUESTIONS = [
     ("In a resonance hybrid, the real molecule has…", ["Electron density spread across contributors", "Only one frozen structure", "No pi electrons", "Only single bonds"], "Electron density spread across contributors"),
 ]
 
+EXPLANATIONS = {
+    "What does sp3 hybridization describe?": "sp3 hybridization mixes one s orbital with three p orbitals to create four equivalent hybrid orbitals. Look for the answer describing four equivalent orbitals, not a resonance form or spectroscopy signal.",
+    "A nucleophile is best described asâ€¦": "A nucleophile is electron-rich and donates a pair of electrons to form a bond. The key clue is donor: an electron-pair acceptor is an electrophile.",
+    "SN2 reactions are characterized byâ€¦": "SN2 is a one-step backside attack. The incoming nucleophile attacks as the leaving group departs, causing inversion of configuration.",
+    "Enantiomers are molecules that areâ€¦": "Enantiomers are non-superimposable mirror images. They have the same connectivity but differ in three-dimensional arrangement at their stereocenters.",
+    "IR spectroscopy is especially useful for identifyingâ€¦": "IR spectroscopy measures bond vibrations, so it is especially useful for recognizing functional groups. It does not directly provide molecular mass or reaction yield.",
+    "In a resonance hybrid, the real molecule hasâ€¦": "A resonance hybrid is the single real structure represented by multiple contributors. Electron density is delocalized across the contributing structures rather than frozen in only one of them.",
+}
+
 class Avatar(BaseModel):
     body: str = "arc"
     skin: str = "warm"
@@ -151,7 +160,7 @@ def answer(session_id: str, request: AnswerRequest):
     s.boss_hp = max(0, s.boss_hp - damage); s.cooldowns[spell_id] = time.time() + spell[3]
     boss_hit = random.random() < 0.5; boss_damage = s.current_boss()[3] if boss_hit else 0
     s.player_hp = max(0, s.player_hp - boss_damage); s.log.append(("Correct! " + spell[0] + " deals " + str(damage) + " damage." if is_correct else "Fizzle. The correct answer was: " + correct))
-    result = {"correct": is_correct, "correct_answer": correct, "damage": damage, "boss_hit": boss_hit, "boss_damage": boss_damage, "spell_id": spell_id}
+    result = {"correct": is_correct, "question_prompt": q, "correct_answer": correct, "explanation": EXPLANATIONS.get(q, "Review the definition and compare each answer with the key chemistry idea in the question."), "damage": damage, "boss_hit": boss_hit, "boss_damage": boss_damage, "spell_id": spell_id}
     defeated = s.boss_hp <= 0; defeat = s.player_hp <= 0
     s.active_question = s.active_spell = s.turn_id = None
     if defeated:
@@ -174,4 +183,3 @@ def next_turn(session_id: str):
 
 @app.get("/api/progression")
 def progression(session_id: str): return get_session(session_id).state()
-
