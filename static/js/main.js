@@ -40,21 +40,12 @@ const spells = [
   ['spectral-obliteration', 'Spectral Obliteration', 'STRONG', '45 DMG'],
 ];
 
-const avatarPalette = {
-  body: { arc: '#29556b', scholar: '#66528a' },
-  skin: { warm: '#ffd4b2', deep: '#8e563f', gold: '#d8a25e' },
-  hair: { nebula: '#6c3d79', copper: '#b7653f', silver: '#b8c8d2' },
-  outfit: { coat: '#29556b', hoodie: '#493b78', shirt: '#245e62' },
-  accessory: { goggles: '#36e5d0', gloves: '#ff9f5a', backpack: '#a67cff' },
-};
-
 function updateAvatarPreview() {
   const preview = $('.avatar-preview');
   if (!preview) return;
 
   let figure = preview.querySelector('.avatar-preview-art');
   if (!figure) {
-    preview.querySelector('.avatar-orb')?.remove();
     figure = Avatar({ character: 'organic-apprentice', state: 'idle', size: 'preview', config: avatarConfig });
     figure.classList.add('avatar-preview-art');
     preview.prepend(figure);
@@ -216,7 +207,15 @@ function render(s) {
 
   const avatarPanel = $('#avatar-panel');
   if (avatarPanel) {
-    avatarPanel.innerHTML = `<div class="avatar-card"><div class="avatar-orb"></div><div><div class="avatar-name">FIELD ALCHEMIST</div><div class="avatar-sub">${s.player.hp} / ${s.player.max_hp} HP</div></div></div>`;
+    avatarPanel.innerHTML = '';
+    const card = document.createElement('div');
+    card.className = 'avatar-card';
+    const panelArt = Avatar({ character: 'organic-apprentice', state: 'idle', size: 'panel', config: s.avatar?.config || s.avatar });
+    panelArt.classList.add('avatar-panel-art');
+    const info = document.createElement('div');
+    info.innerHTML = `<div class="avatar-name">FIELD ALCHEMIST</div><div class="avatar-sub">${s.player.hp} / ${s.player.max_hp} HP</div>`;
+    card.append(panelArt, info);
+    avatarPanel.append(card);
   }
 
   const log = $('#log');
@@ -389,11 +388,6 @@ function drawScene(s) {
 }
 
 function bindDomEvents() {
-  ['body', 'skin', 'hair', 'outfit', 'accessory'].forEach((id) => {
-    const element = $('#' + id);
-    if (element) element.addEventListener('change', updateAvatarPreview);
-  });
-
   const startButton = $('#start');
   if (startButton) {
     startButton.addEventListener('click', async () => {
